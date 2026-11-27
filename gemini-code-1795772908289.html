@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>C&L 星空新手村 | Starry Village</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Montserrat:ital,wght@0,700;0,900;1,800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --brand-bg: #0B132B;
+            --brand-card: rgba(28, 37, 65, 0.85);
+            --brand-gold: #F3C969;
+            --brand-green: #7AFFA6;
+            --brand-red: #FF6B6B;
+            --brand-blue: #4DCCFF;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: linear-gradient(135deg, #0B132B 0%, #1C2541 100%);
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex; justify-content: center; align-items: flex-start;
+        }
+
+        .stars {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+            background-image: 
+                radial-gradient(2px 2px at 20px 30px, #eee, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 40px 70px, #fff, rgba(0,0,0)),
+                radial-gradient(2px 2px at 50px 160px, #ddd, rgba(0,0,0)),
+                radial-gradient(2px 2px at 90px 40px, #fff, rgba(0,0,0));
+            background-repeat: repeat; background-size: 200px 200px;
+            animation: twinkle 4s infinite alternate;
+        }
+        @keyframes twinkle { 0% { opacity: 0.3; } 100% { opacity: 0.8; } }
+
+        .app-container {
+            width: 100%; max-width: 500px; padding: 25px 20px;
+            position: relative; z-index: 1;
+            min-height: 100vh; display: flex; flex-direction: column;
+        }
+
+        .view { display: none; opacity: 0; transition: opacity 0.4s ease; }
+        .view.active { display: block; opacity: 1; }
+
+        /* --- 登入畫面 (創建角色) --- */
+        .login-box {
+            background: var(--brand-card); backdrop-filter: blur(10px);
+            border: 1px solid rgba(243, 201, 105, 0.3);
+            border-radius: 24px; padding: 30px 22px;
+            text-align: center; margin: 15px 0 30px 0;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+        .title { font-family: 'Montserrat', sans-serif; font-size: 26px; font-weight: 900; color: var(--brand-gold); margin-bottom: 5px; font-style: italic; letter-spacing: 1px; }
+        .subtitle { font-size: 13px; color: rgba(255,255,255,0.7); margin-bottom: 20px; }
+
+        .input-box, .select-box { 
+            width: 100%; padding: 13px 15px; border-radius: 12px; 
+            border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.5); 
+            color: white; font-size: 15px; font-weight: 700; text-align: center; 
+            outline: none; margin-bottom: 15px; transition: 0.3s; 
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+        .input-box:focus, .select-box:focus { border-color: var(--brand-gold); box-shadow: 0 0 10px rgba(243,201,105,0.3); }
+        .select-box option { background: #1C2541; color: white; }
+
+        .section-label { font-size: 12px; color: var(--brand-gold); font-weight: 700; margin-bottom: 10px; letter-spacing: 1px; text-align: left; }
+        .avatar-grid { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .avatar-item { font-size: 28px; width: 50px; height: 50px; display: flex; justify-content: center; align-items: center; background: rgba(255,255,255,0.05); border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; user-select: none; }
+        .avatar-item.selected { border-color: var(--brand-gold); background: rgba(243, 201, 105, 0.2); transform: scale(1.12); box-shadow: 0 0 15px rgba(243, 201, 105, 0.5); }
+
+        /* 能力值拉桿區 */
+        .sliders-box { background: rgba(0,0,0,0.3); border-radius: 16px; padding: 15px; margin-bottom: 22px; border: 1px solid rgba(255,255,255,0.08); }
+        .slider-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-size: 13px; font-weight: 700; }
+        .slider-row:last-child { margin-bottom: 0; }
+        .slider-label { width: 65px; text-align: left; color: rgba(255,255,255,0.85); }
+        .slider-input { flex-grow: 1; margin: 0 10px; accent-color: var(--brand-gold); cursor: pointer; }
+        .slider-val { width: 32px; text-align: right; font-family: 'Montserrat'; color: var(--brand-gold); }
+
+        .btn-primary { width: 100%; padding: 16px; background: var(--brand-gold); color: #0B132B; font-family: 'Noto Sans TC', sans-serif; font-weight: 900; font-size: 16px; letter-spacing: 2px; border: none; border-radius: 12px; cursor: pointer; transition: all 0.2s; box-shadow: 0 6px 15px rgba(243,201,105,0.3); }
+        .btn-primary:active { transform: scale(0.96); box-shadow: none; }
+
+        /* --- 村莊大地圖 (Village Map) --- */
+        .rpg-header { display: flex; align-items: center; gap: 15px; margin-bottom: 30px; background: rgba(0,0,0,0.4); padding: 15px 18px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); }
+        .rpg-avatar { font-size: 36px; background: rgba(255,255,255,0.1); width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 2px solid var(--brand-gold); box-shadow: 0 0 10px rgba(243,201,105,0.3); flex-shrink: 0; }
+        .rpg-info { flex-grow: 1; min-width: 0; }
+        .rpg-info h2 { font-size: 16px; font-weight: 700; margin-bottom: 4px; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .rpg-info .level { font-size: 12px; color: var(--brand-green); font-weight: 700; letter-spacing: 1px; background: rgba(122,255,166,0.1); padding: 2px 8px; border-radius: 10px; display: inline-block; }
+
+        .edit-profile-btn {
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);
+            color: rgba(255,255,255,0.8); padding: 7px 12px; border-radius: 12px;
+            font-size: 12px; font-weight: 700; cursor: pointer; flex-shrink: 0;
+            transition: all 0.2s; font-family: 'Noto Sans TC', sans-serif;
+        }
+        .edit-profile-btn:hover { background: rgba(243,201,105,0.2); border-color: var(--brand-gold); color: var(--brand-gold); }
+        .edit-profile-btn:active { transform: scale(0.95); }
+
+        .map-title { font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 800; color: var(--brand-gold); letter-spacing: 3px; margin-bottom: 15px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .map-title::before, .map-title::after { content: ''; height: 1px; width: 40px; background: rgba(243,201,105,0.5); }
+
+        .location-list { display: flex; flex-direction: column; gap: 15px; padding-bottom: 40px; }
+        .location-card { display: flex; align-items: center; gap: 15px; background: var(--brand-card); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 20px; cursor: pointer; transition: all 0.2s; backdrop-filter: blur(5px); position: relative; overflow: hidden; }
+        .location-card::before { content: '前往 ➔'; position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.3); opacity: 0; transition: 0.3s; }
+        .location-card:hover { border-color: rgba(243,201,105,0.4); transform: translateX(5px); }
+        .location-card:hover::before { opacity: 1; right: 15px; color: var(--brand-gold); }
+        .location-card:active { transform: scale(0.98); }
+        .loc-icon { font-size: 32px; width: 50px; text-align: center; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+        .loc-info h3 { font-size: 16px; font-weight: 900; letter-spacing: 1px; margin-bottom: 4px; color: white; }
+        .loc-info p { font-size: 12px; color: rgba(255,255,255,0.6); font-weight: 500; }
+
+        /* --- 彈出視窗 (Center Modal) --- */
+        .modal-wrap { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 9999; display: flex; justify-content: center; align-items: center; padding: 20px; opacity: 0; visibility: hidden; transition: all 0.3s ease; }
+        .modal-wrap.open { opacity: 1; visibility: visible; }
+        .modal-content { background: #1C2541; width: 100%; max-width: 480px; max-height: 85vh; border-radius: 24px; padding: 30px 25px; transform: scale(0.95); opacity: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; border: 1px solid rgba(243,201,105,0.3); box-shadow: 0 20px 50px rgba(0,0,0,0.6); display: flex; flex-direction: column; }
+        .modal-wrap.open .modal-content { transform: scale(1); opacity: 1; }
+        .close-btn { position: absolute; top: 20px; right: 20px; font-size: 24px; color: rgba(255,255,255,0.5); cursor: pointer; transition: 0.2s; background: rgba(0,0,0,0.3); width: 36px; height: 36px; border-radius: 50%; display: flex; justify-content: center; align-items: center;}
+        .close-btn:hover { color: white; background: rgba(255,255,255,0.1); }
+        .modal-title { font-family: 'Montserrat', sans-serif; font-size: 22px; font-weight: 800; color: var(--brand-gold); margin-bottom: 20px; text-align: center; flex-shrink: 0; }
+        .modal-body { overflow-y: auto; padding-right: 5px; flex-grow: 1; } 
+        .modal-body::-webkit-scrollbar { width: 6px; }
+        .modal-body::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 10px; }
+        .modal-body::-webkit-scrollbar-thumb { background: rgba(243, 201, 105, 0.3); border-radius: 10px; }
+
+        /* 行程與佈告欄 */
+        .day-header { background: rgba(243, 201, 105, 0.12); color: var(--brand-gold); padding: 8px 15px; border-radius: 8px; font-weight: 700; font-size: 14px; margin: 15px 0 12px 0; display: inline-block; }
+        .day-header:first-child { margin-top: 0; }
+        .timeline-item { display: flex; gap: 15px; margin-bottom: 20px; }
+        .time { font-family: 'Montserrat'; font-weight: 700; color: var(--brand-blue); font-size: 14px; width: 95px; flex-shrink: 0; text-align: right; }
+        .event-info { border-left: 2px solid rgba(255,255,255,0.2); padding-left: 15px; padding-bottom: 5px; }
+        .event-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+        .event-sub { font-size: 12px; color: rgba(255,255,255,0.6); }
+
+        .notice-list { list-style: none; }
+        .notice-list li { background: rgba(0,0,0,0.22); padding: 14px 15px; border-radius: 12px; margin-bottom: 10px; font-size: 13.5px; line-height: 1.65; border-left: 3px solid var(--brand-gold); }
+        .notice-list li.rule-item { border-left-color: var(--brand-red); }
+        .notice-list li .rule-title { color: var(--brand-gold); font-weight: 900; display: block; margin-bottom: 4px; font-size: 14px; }
+        .notice-list li.rule-item .rule-title { color: #FF8E8E; }
+        .rule-warn { color: var(--brand-gold); font-weight: 700; }
+
+        /* 投票表單容器 */
+        .vote-iframe { width: 100%; height: 58vh; border: none; border-radius: 14px; background: white; }
+        .vote-fallback-btn {
+            display: block; width: 100%; text-align: center; margin-top: 12px; padding: 12px;
+            background: rgba(243, 201, 105, 0.15); border: 1px solid rgba(243, 201, 105, 0.4);
+            color: var(--brand-gold); border-radius: 12px; font-size: 13px; font-weight: 700;
+            text-decoration: none; transition: 0.2s;
+        }
+        .vote-fallback-btn:hover { background: var(--brand-gold); color: #0B132B; }
+
+        .locked-state { text-align: center; padding: 40px 20px; }
+        .locked-state i { font-size: 60px; color: rgba(255,255,255,0.1); margin-bottom: 20px; }
+        .locked-state h3 { color: var(--brand-gold); margin-bottom: 10px; font-size: 20px; }
+        .locked-state p { font-size: 14px; color: #888; line-height: 1.6; }
+
+        /* 留言板與圖鑑樣式 */
+        .chat-container { display: flex; flex-direction: column; gap: 15px; margin-bottom: 15px; }
+        .msg-bubble { background: rgba(255,255,255,0.1); padding: 12px 15px; border-radius: 15px 15px 15px 0; font-size: 14px; width: fit-content; max-width: 85%; word-break: break-word; }
+        .msg-bubble.me { background: rgba(243, 201, 105, 0.2); border: 1px solid rgba(243, 201, 105, 0.4); border-radius: 15px 15px 0 15px; align-self: flex-end; color: var(--brand-gold); }
+        .msg-name { font-size: 11px; color: rgba(255,255,255,0.5); margin-bottom: 4px; font-weight: 700; }
+        .msg-input-area { display: flex; gap: 10px; margin-top: 10px; flex-shrink: 0; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .msg-input { flex-grow: 1; padding: 12px 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.5); color: white; outline: none; transition: 0.3s;}
+        .msg-input:focus { border-color: var(--brand-gold); }
+        .msg-send { background: var(--brand-gold); border: none; width: 45px; height: 45px; border-radius: 50%; color: #1C2541; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 16px; flex-shrink: 0; }
+        
+        .villager-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 20px; }
+        .v-chip { background: rgba(255,255,255,0.08); border: 1px solid rgba(243,201,105,0.3); padding: 6px 12px; border-radius: 20px; font-size: 13px; cursor: pointer; transition: 0.2s; }
+        .v-chip:hover { background: var(--brand-gold); color: #0B132B; font-weight: 700; }
+
+        .stat-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; font-size: 13px; font-weight: 700;}
+        .stat-label { width: 60px; text-align: left; color: rgba(255,255,255,0.8); }
+        .stat-bar-bg { flex-grow: 1; height: 10px; background: rgba(0,0,0,0.4); border-radius: 5px; overflow: hidden; margin: 0 12px; }
+        .stat-bar-fill { height: 100%; border-radius: 5px; transition: width 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); width: 0%; }
+        .stat-val { width: 35px; text-align: right; font-family: 'Montserrat'; font-weight: 900; }
+    </style>
+</head>
+<body>
+    <div class="stars"></div>
+
+    <div class="app-container">
+        
+        <!-- VIEW 1: 創建角色 & 報到 -->
+        <div id="view-login" class="view">
+            <div class="login-box">
+                <i class="fa-solid fa-gamepad" style="font-size: 36px; color: var(--brand-gold); margin-bottom: 10px;"></i>
+                <h1 class="title">New Game</h1>
+                <p class="subtitle">建立你的星空角色卡，完成露營報到！</p>
+                
+                <div class="section-label">1. 村民名字與稱號</div>
+                <input type="text" id="login-name" class="input-box" placeholder="請輸入您的名字 (例：Hannah)" autocomplete="off">
+                <input type="text" id="login-title" class="input-box" placeholder="自訂稱號 (例：永遠睡不飽的、氣氛製造機)" autocomplete="off">
+                
+                <div class="section-label">2. 挑選形象與職業</div>
+                <div class="avatar-grid" id="avatar-grid">
+                    <div class="avatar-item selected" data-icon="🐱">🐱</div>
+                    <div class="avatar-item" data-icon="🐶">🐶</div>
+                    <div class="avatar-item" data-icon="🦉">🦉</div>
+                    <div class="avatar-item" data-icon="🐻">🐻</div>
+                    <div class="avatar-item" data-icon="🐿️">🐿️</div>
+                </div>
+                <select id="login-job" class="select-box">
+                    <option value="⚔️ 狂戰士">⚔️ 狂戰士 (運動會主力)</option>
+                    <option value="🧙‍♂️ 大魔法師">🧙‍♂️ 大魔法師 (智謀擔當)</option>
+                    <option value="🍳 營地大廚">🍳 營地大廚 (吃貨擔當)</option>
+                    <option value="💤 職業睡客">💤 職業睡客 (準備躺平)</option>
+                    <option value="🎸 吟遊詩人">🎸 吟遊詩人 (氣氛擔當)</option>
+                    <option value="🏹 精靈弓手">🏹 精靈弓手 (敏捷擔當)</option>
+                    <option value="🛡️ 守護騎士">🛡️ 守護騎士 (可靠夥伴)</option>
+                </select>
+
+                <div class="section-label">3. 誠實設定你的露營能力值</div>
+                <div class="sliders-box">
+                    <div class="slider-row">
+                        <span class="slider-label">❤️ 體力</span>
+                        <input type="range" id="stat-hp" class="slider-input" min="1" max="100" value="80" oninput="document.getElementById('val-hp').innerText=this.value">
+                        <span class="slider-val" id="val-hp">80</span>
+                    </div>
+                    <div class="slider-row">
+                        <span class="slider-label">✨ 魔力</span>
+                        <input type="range" id="stat-mp" class="slider-input" min="1" max="100" value="70" oninput="document.getElementById('val-mp').innerText=this.value">
+                        <span class="slider-val" id="val-mp">70</span>
+                    </div>
+                    <div class="slider-row">
+                        <span class="slider-label">🍳 廚藝</span>
+                        <input type="range" id="stat-cook" class="slider-input" min="1" max="100" value="50" oninput="document.getElementById('val-cook').innerText=this.value">
+                        <span class="slider-val" id="val-cook">50</span>
+                    </div>
+                    <div class="slider-row">
+                        <span class="slider-label">💤 睡意</span>
+                        <input type="range" id="stat-sleep" class="slider-input" min="1" max="100" value="60" oninput="document.getElementById('val-sleep').innerText=this.value">
+                        <span class="slider-val" id="val-sleep">60</span>
+                    </div>
+                </div>
+
+                <button class="btn-primary" id="login-btn" onclick="enterVillage()">完成報到，進入新手村</button>
+            </div>
+        </div>
+
+        <!-- VIEW 2: 新手村地圖 -->
+        <div id="view-lobby" class="view">
+            <div class="rpg-header">
+                <div class="rpg-avatar" id="lobby-avatar">🐱</div>
+                <div class="rpg-info">
+                    <h2><span id="lobby-name">村民</span></h2>
+                    <span class="level" id="lobby-job">⚔️ 狂戰士</span>
+                </div>
+                <button class="edit-profile-btn" onclick="editProfile()">
+                    <i class="fa-solid fa-pen"></i> 編輯
+                </button>
+            </div>
+
+            <div class="map-title">VILLAGE MAP</div>
+
+            <div class="location-list">
+                <div class="location-card" onclick="openModal('schedule')">
+                    <div class="loc-icon">🏕️</div>
+                    <div class="loc-info">
+                        <h3 style="color: #FF9F1C;">冒險公會 (行程表)</h3>
+                        <p>查看 Day 1 & Day 2 冒險指南</p>
+                    </div>
+                </div>
+
+                <div class="location-card" onclick="openModal('notice')">
+                    <div class="loc-icon">📢</div>
+                    <div class="loc-info">
+                        <h3 style="color: #F3C969;">村莊佈告欄</h3>
+                        <p>行前裝備與自然圈營區規範</p>
+                    </div>
+                </div>
+
+                <!-- ★★★ 新增：村莊投票所 ★★★ -->
+                <div class="location-card" onclick="openModal('vote')">
+                    <div class="loc-icon">🗳️</div>
+                    <div class="loc-info">
+                        <h3 style="color: #7AFFA6;">村莊投票所</h3>
+                        <p>點此填寫投票表單，投下神聖一票！</p>
+                    </div>
+                </div>
+
+                <div class="location-card" onclick="openModal('chat')">
+                    <div class="loc-icon">💬</div>
+                    <div class="loc-info">
+                        <h3 style="color: #00F5D4;">村民集會所</h3>
+                        <p>進入星空留言板交流情報</p>
+                    </div>
+                </div>
+
+                <div class="location-card" onclick="openModal('intel')">
+                    <div class="loc-icon">🔮</div>
+                    <div class="loc-info">
+                        <h3 style="color: #FF6B6B;">星空占卜屋 (村民圖鑑)</h3>
+                        <p>查看已報到村民的真實能力值</p>
+                    </div>
+                </div>
+
+                <div class="location-card" onclick="openModal('neighbors')">
+                    <div class="loc-icon">⛺</div>
+                    <div class="loc-info">
+                        <h3 style="color: #F15BB5;">好鄰居營地</h3>
+                        <p>許願池配對結果 (結算中)</p>
+                    </div>
+                </div>
+
+                <div class="location-card" onclick="openModal('teams')">
+                    <div class="loc-icon">⚔️</div>
+                    <div class="loc-info">
+                        <h3 style="color: #9B5DE5;">星空競技場</h3>
+                        <p>運動會戰隊分組 (編組中)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 置中彈出視窗 -->
+    <div id="modal-wrapper" class="modal-wrap">
+        <div class="modal-content">
+            <i class="fa-solid fa-xmark close-btn" onclick="closeModal()"></i>
+            <h2 id="modal-title" class="modal-title">地點名稱</h2>
+            <div id="modal-body" class="modal-body"></div>
+        </div>
+    </div>
+
+<script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbxMVrZ3aRjahJIBJPjmhk2YJVyd5HtSNZY_N8EKJlFG5zeuOMa8JmJInn5i3Wlrryuv/exec";
+    const VOTE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfjzqL33HYbyT6Z_QMKpOwmEVRkhJ2vp5BCJYuO-gSFinfVnA/viewform";
+    const STORAGE_KEY = "starry_village_profile_v1";
+
+    let currentUser = "冒險者";
+    let currentAvatar = "🐱";
+    let cachedProfiles = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const avatars = document.querySelectorAll('.avatar-item');
+        avatars.forEach(item => {
+            item.addEventListener('click', function() {
+                avatars.forEach(a => a.classList.remove('selected'));
+                this.classList.add('selected');
+                currentAvatar = this.getAttribute('data-icon');
+            });
+        });
+
+        const savedData = localStorage.getItem(STORAGE_KEY);
+        if (savedData) {
+            try {
+                const profile = JSON.parse(savedData);
+                currentUser = profile.name;
+                currentAvatar = profile.avatar;
+                document.getElementById('lobby-name').innerText = profile.name;
+                document.getElementById('lobby-avatar').innerText = profile.avatar;
+                document.getElementById('lobby-job').innerText = profile.job;
+                document.getElementById('view-lobby').classList.add('active');
+                return;
+            } catch (e) {
+                localStorage.removeItem(STORAGE_KEY);
+            }
+        }
+        document.getElementById('view-login').classList.add('active');
+    });
+
+    function enterVillage() {
+        const nameInput = document.getElementById('login-name').value.trim();
+        if (!nameInput) {
+            alert("請先輸入您的名字才能報到喔！");
+            document.getElementById('login-name').focus();
+            return;
+        }
+
+        const profile = {
+            name: nameInput,
+            title: document.getElementById('login-title').value.trim() || "神秘的星空旅人",
+            avatar: currentAvatar,
+            job: document.getElementById('login-job').value,
+            hp: document.getElementById('stat-hp').value,
+            mp: document.getElementById('stat-mp').value,
+            cook: document.getElementById('stat-cook').value,
+            sleep: document.getElementById('stat-sleep').value
+        };
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+
+        currentUser = profile.name;
+        document.getElementById('lobby-name').innerText = profile.name;
+        document.getElementById('lobby-avatar').innerText = profile.avatar;
+        document.getElementById('lobby-job').innerText = profile.job;
+
+        const saveUrl = `${API_URL}?action=saveProfile&name=${encodeURIComponent(profile.name)}&avatar=${encodeURIComponent(profile.avatar)}&title=${encodeURIComponent(profile.title)}&job=${encodeURIComponent(profile.job)}&hp=${profile.hp}&mp=${profile.mp}&cook=${profile.cook}&sleep=${profile.sleep}`;
+        fetch(saveUrl).catch(e => console.log("報到資料傳送失敗", e));
+
+        document.getElementById('view-login').classList.remove('active');
+        setTimeout(() => { document.getElementById('view-lobby').classList.add('active'); }, 150);
+    }
+
+    function editProfile() {
+        const savedData = localStorage.getItem(STORAGE_KEY);
+        if (savedData) {
+            const p = JSON.parse(savedData);
+            document.getElementById('login-name').value = p.name || "";
+            document.getElementById('login-title').value = p.title || "";
+            document.getElementById('login-job').value = p.job || "⚔️ 狂戰士";
+            
+            document.getElementById('stat-hp').value = p.hp || 80;
+            document.getElementById('val-hp').innerText = p.hp || 80;
+            document.getElementById('stat-mp').value = p.mp || 70;
+            document.getElementById('val-mp').innerText = p.mp || 70;
+            document.getElementById('stat-cook').value = p.cook || 50;
+            document.getElementById('val-cook').innerText = p.cook || 50;
+            document.getElementById('stat-sleep').value = p.sleep || 60;
+            document.getElementById('val-sleep').innerText = p.sleep || 60;
+
+            currentAvatar = p.avatar || "🐱";
+            document.querySelectorAll('.avatar-item').forEach(a => {
+                a.classList.toggle('selected', a.getAttribute('data-icon') === currentAvatar);
+            });
+            document.getElementById('login-btn').innerText = "更新資料，返回新手村";
+        }
+        document.getElementById('view-lobby').classList.remove('active');
+        setTimeout(() => { document.getElementById('view-login').classList.add('active'); }, 150);
+    }
+
+    function openModal(type) {
+        const titleEl = document.getElementById('modal-title');
+        const bodyEl = document.getElementById('modal-body');
+        
+        if (type === 'schedule') {
+            titleEl.innerText = "🏕️ 冒險公會";
+            bodyEl.innerHTML = `
+                <div class="day-header">DAY 1 - 12/28 營火啟程</div>
+                <div class="timeline-item"><div class="time">08:00 - 08:20</div><div class="event-info"><div class="event-title">集合</div></div></div>
+                <div class="timeline-item"><div class="time">08:25 - 09:40</div><div class="event-info"><div class="event-title">車程出發</div></div></div>
+                <div class="timeline-item"><div class="time">10:00 - 12:00</div><div class="event-info"><div class="event-title">Closing</div></div></div>
+                <div class="timeline-item"><div class="time">12:00 - 13:00</div><div class="event-info"><div class="event-title">午餐時間</div></div></div>
+                <div class="timeline-item"><div class="time">13:00 - 14:00</div><div class="event-info"><div class="event-title">運動</div></div></div>
+                <div class="timeline-item"><div class="time">14:00 - 15:00</div><div class="event-info"><div class="event-title">下午茶時光</div></div></div>
+                <div class="timeline-item"><div class="time">16:00</div><div class="event-info"><div class="event-title" style="color:var(--brand-green);">入圈 (自然圈農場)</div></div></div>
+                <div class="timeline-item"><div class="time">17:00 - 18:00</div><div class="event-info"><div class="event-title">手作體驗</div></div></div>
+                <div class="timeline-item"><div class="time">18:00 - 21:00</div><div class="event-info"><div class="event-title" style="color:var(--brand-gold);">星空晚宴</div></div></div>
+                
+                <div class="day-header" style="margin-top: 20px;">DAY 2 - 12/29 草原對決</div>
+                <div class="timeline-item"><div class="time">09:00 - 12:00</div><div class="event-info"><div class="event-title">Launching</div><div class="event-sub">自然圈會議</div></div></div>
+                <div class="timeline-item"><div class="time">12:00 - 13:30</div><div class="event-info"><div class="event-title">午餐 Buffet</div></div></div>
+                <div class="timeline-item"><div class="time">13:30 - 17:00</div><div class="event-info"><div class="event-title" style="color:var(--brand-blue);">草原運動會</div></div></div>
+                <div class="timeline-item"><div class="time">17:00</div><div class="event-info"><div class="event-title">回迪卡儂</div><div class="event-sub">平安賦歸</div></div></div>
+            `;
+        } 
+        else if (type === 'notice') {
+            titleEl.innerText = "📢 村莊佈告欄";
+            bodyEl.innerHTML = `
+                <div class="day-header">📜 入圈須知 (營區規範)</div>
+                <ul class="notice-list">
+                    <li class="rule-item">
+                        <span class="rule-title">🚭 菸酒規範</span>
+                        • 園區皆禁止吸菸，另設有吸菸區（於園區內吸菸將收取清潔費 <span class="rule-warn">$1,000</span>）。<br>
+                        • 酒品依人頭計算，每人可攜帶 <span class="rule-warn">500ml</span>，超過需酌收 <span class="rule-warn">$1,200/圈</span> 回收清潔費（亦可於吧台消費 $1,200 折抵）。
+                    </li>
+                    <li class="rule-item">
+                        <span class="rule-title">🤫 寧靜規範</span>
+                        • 每日 <span class="rule-warn">23:00</span> 起為「寧靜時段」，請降低音量並接受勸導（屢勸不聽園區有權驅趕且恕不退費）。<br>
+                        • 園區內禁用 KTV / DJ 檯 / 大型音響設備。
+                    </li>
+                    <li class="rule-item">
+                        <span class="rule-title">🍽️ 餐食規範</span>
+                        • 園區禁止攜帶生食肉品、派對餐食（<span style="color:var(--brand-green);">零食 / 宵夜可攜帶</span>）。
+                    </li>
+                    <li class="rule-item">
+                        <span class="rule-title">🎲 桌遊規範</span>
+                        • 園區內禁止賭博 / 麻將 / 骰盅 / 牌九等行為。
+                    </li>
+                    <li class="rule-item">
+                        <span class="rule-title">🐾 寵物規範</span>
+                        • 農場為寵物友善空間，請隨手清潔大小便。<br>
+                        • 公共區域請牽繫繩；寵物入帳請自備寢具，請勿上床翻滾。
+                    </li>
+                </ul>
+
+                <div class="day-header" style="margin-top: 15px;">🎒 行前裝備提醒</div>
+                <ul class="notice-list">
+                    <li><b style="color:var(--brand-gold);">保暖裝備：</b>山區早晚溫差大，防寒外套不可少。</li>
+                    <li><b style="color:var(--brand-gold);">個人物資：</b>響應環保，請自備牙膏、牙刷與毛巾。</li>
+                    <li><b style="color:var(--brand-gold);">補水道具：</b>營區有飲水機，請帶上自己的水壺。</li>
+                    <li><b style="color:var(--brand-gold);">戰鬥服裝：</b>D2 有草原運動會，記得穿著好活動的服裝與跑鞋。</li>
+                    <li><b style="color:var(--brand-green);">必備心態：</b>帶著一顆準備好好放鬆與同樂的心！</li>
+                </ul>
+            `;
+        }
+        else if (type === 'vote') {
+            titleEl.innerText = "🗳️ 村莊投票所";
+            bodyEl.innerHTML = `
+                <iframe class="vote-iframe" src="${VOTE_FORM_URL}?embedded=true">載入中…</iframe>
+                <a class="vote-fallback-btn" href="${VOTE_FORM_URL}" target="_blank" rel="noopener noreferrer">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> 如果畫面無法顯示，點此另開表單填寫
+                </a>
+            `;
+        }
+        else if (type === 'intel') {
+            titleEl.innerText = "🔮 星空占卜屋";
+            bodyEl.innerHTML = `
+                <p id="intel-count" style="font-size:13px; color:var(--brand-green); margin-bottom:12px; text-align:center; font-weight:700;">正在感應已報到的村民... 🌌</p>
+                <div id="villager-list" class="villager-chips"></div>
+                <div id="villager-card" style="display:none; background: rgba(0,0,0,0.3); border-radius: 16px; padding: 25px 20px; text-align:center; border: 1px solid rgba(243,201,105,0.2);"></div>
+            `;
+            fetchProfiles();
+        }
+        else if (type === 'neighbors') {
+            titleEl.innerText = "⛺ 好鄰居營地";
+            bodyEl.innerHTML = `
+                <div class="locked-state">
+                    <i class="fa-solid fa-tent-lock"></i>
+                    <h3>營地尚在分配中</h3>
+                    <p>好鄰居許願池的結果，<br>目前正在由村長秘密配對與結算中...<br>請密切鎖定群組公告！</p>
+                </div>
+            `;
+        }
+        else if (type === 'teams') {
+            titleEl.innerText = "⚔️ 星空競技場";
+            bodyEl.innerHTML = `
+                <div class="locked-state">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <h3>戰隊編組中...</h3>
+                    <p>各路英雄的運動會分組名單<br>正在等待組長們最後確認。<br>準備好你的熱血，敬請期待！</p>
+                </div>
+            `;
+        }
+        else if (type === 'chat') {
+            titleEl.innerText = "💬 村民集會所";
+            bodyEl.innerHTML = `
+                <div class="chat-container" id="chat-box">
+                    <div style="text-align:center; color:#888; padding:20px;">讀取星空電波中... 🌌</div>
+                </div>
+                <div class="msg-input-area">
+                    <input type="text" id="chat-input" class="msg-input" placeholder="對大家說點什麼..." autocomplete="off">
+                    <button class="msg-send" onclick="sendMsg()"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+            `;
+            fetchChatMessages();
+            setTimeout(() => {
+                const inputEl = document.getElementById('chat-input');
+                if(inputEl) inputEl.addEventListener('keypress', e => { if (e.key === 'Enter') sendMsg(); });
+            }, 100);
+        }
+
+        document.getElementById('modal-wrapper').classList.add('open');
+    }
+
+    function closeModal() {
+        document.getElementById('modal-wrapper').classList.remove('open');
+    }
+
+    // 村民圖鑑
+    function fetchProfiles() {
+        fetch(`${API_URL}?action=getProfiles`)
+            .then(res => res.json())
+            .then(data => {
+                cachedProfiles = data;
+                const countEl = document.getElementById('intel-count');
+                const listEl = document.getElementById('villager-list');
+                
+                countEl.innerText = `目前已有 ${data.length} 位村民完成報到！(點擊名字偷看資料)`;
+                listEl.innerHTML = '';
+
+                if (data.length === 0) {
+                    listEl.innerHTML = '<div style="color:#888; font-size:13px;">還沒有人報到喔！</div>';
+                    return;
+                }
+
+                data.forEach((v, index) => {
+                    const chip = document.createElement('div');
+                    chip.className = 'v-chip';
+                    chip.innerText = `${v.avatar} ${v.name}`;
+                    chip.onclick = () => showVillagerCard(index);
+                    listEl.appendChild(chip);
+                });
+            })
+            .catch(() => {
+                document.getElementById('intel-count').innerText = "讀取失敗，請確認後台已發布新版本！";
+            });
+    }
+
+    function showVillagerCard(index) {
+        const v = cachedProfiles[index];
+        const card = document.getElementById('villager-card');
+        card.style.display = 'block';
+        card.innerHTML = `
+            <div style="font-size: 50px; margin-bottom: 5px;">${v.avatar}</div>
+            <div style="font-size: 12px; color: var(--brand-gold); font-weight: 700; letter-spacing:1px;">${v.title}</div>
+            <h3 style="margin: 5px 0 15px 0; font-size: 24px; color: white;">${v.name}</h3>
+            <div style="display:inline-block; background: rgba(255,255,255,0.1); padding: 6px 18px; border-radius: 20px; font-size:14px; margin-bottom:20px; color:var(--brand-green); font-weight:900; border: 1px solid rgba(122,255,166,0.3);">${v.job}</div>
+            
+            <div style="padding: 0 10px;">
+                <div class="stat-row"><div class="stat-label">❤️ 體力</div><div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-hp" style="background:var(--brand-red);"></div></div><div class="stat-val" style="color:var(--brand-red);">${v.hp}</div></div>
+                <div class="stat-row"><div class="stat-label">✨ 魔力</div><div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-mp" style="background:var(--brand-blue);"></div></div><div class="stat-val" style="color:var(--brand-blue);">${v.mp}</div></div>
+                <div class="stat-row"><div class="stat-label">🍳 廚藝</div><div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-cook" style="background:#FF9F1C;"></div></div><div class="stat-val" style="color:#FF9F1C;">${v.cook}</div></div>
+                <div class="stat-row"><div class="stat-label">💤 睡意</div><div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-sleep" style="background:#B48EAD;"></div></div><div class="stat-val" style="color:#B48EAD;">${v.sleep}</div></div>
+            </div>
+        `;
+        setTimeout(() => {
+            document.getElementById('bar-hp').style.width = v.hp + '%';
+            document.getElementById('bar-mp').style.width = v.mp + '%';
+            document.getElementById('bar-cook').style.width = v.cook + '%';
+            document.getElementById('bar-sleep').style.width = v.sleep + '%';
+        }, 50);
+    }
+
+    // 留言板
+    function fetchChatMessages() {
+        fetch(`${API_URL}?action=readChat`)
+            .then(res => res.json())
+            .then(data => {
+                const chatBox = document.getElementById('chat-box');
+                chatBox.innerHTML = '';
+                if(data.length === 0) {
+                    chatBox.innerHTML = '<div style="text-align:center; color:#888; padding:20px;">集會所目前空無一人，快來搶頭香！</div>';
+                }
+                data.forEach(m => {
+                    const msgDiv = document.createElement('div');
+                    msgDiv.className = 'msg-bubble' + (m.name === currentUser ? ' me' : '');
+                    msgDiv.innerHTML = `<div class="msg-name">${m.name} ${m.avatar}</div>${m.msg}`;
+                    chatBox.appendChild(msgDiv);
+                });
+                chatBox.scrollTop = chatBox.scrollHeight;
+            })
+            .catch(() => {
+                document.getElementById('chat-box').innerHTML = '<div style="text-align:center; color:#888; padding:20px;">讀取失敗，請檢查網路連線。</div>';
+            });
+    }
+
+    function sendMsg() {
+        const input = document.getElementById('chat-input');
+        const text = input.value.trim();
+        if(!text) return;
+
+        const chatBox = document.getElementById('chat-box');
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'msg-bubble me';
+        msgDiv.innerHTML = `<div class="msg-name">${currentUser} ${currentAvatar}</div>${text}`;
+        
+        if(chatBox.innerHTML.includes('目前空無一人') || chatBox.innerHTML.includes('讀取星空電波中')) {
+            chatBox.innerHTML = '';
+        }
+        
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+        input.value = '';
+        
+        const sendUrl = `${API_URL}?action=sendChat&name=${encodeURIComponent(currentUser)}&avatar=${encodeURIComponent(currentAvatar)}&msg=${encodeURIComponent(text)}`;
+        fetch(sendUrl).catch(e => console.log("發送失敗", e));
+    }
+</script>
+</body>
+</html>
